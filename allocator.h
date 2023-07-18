@@ -22,8 +22,9 @@ inline T* allocate(ptrdiff_t size, T*) {
     // 而是使用默认的处理方式（通常是抛出std::bad_alloc异常）
     std::set_new_handler(nullptr);
 
-    // 与 new 运算符不同，::operator new 不会调用对象的构造函数，仅仅是分配内存空间
-    // 它返回的是一个指向已分配内存的 void* 指针，而不是指向对象的指针
+    // 与 new 运算符不同，::operator new
+    // 不会调用对象的构造函数，仅仅是分配内存空间 它返回的是一个指向已分配内存的
+    // void* 指针，而不是指向对象的指针
     T* tmp = (T*)(::operator new(size_t(size * sizeof(T))));
 
     if (tmp == nullptr) {
@@ -37,7 +38,8 @@ inline T* allocate(ptrdiff_t size, T*) {
 template <typename T>
 inline void deallocate(T* buffer) {
     // ::operator delete
-    // 不会自动调用对象的析构函数。它仅用于释放内存，不会执行任何对象特定的清理操作 delete
+    // 不会自动调用对象的析构函数。它仅用于释放内存，不会执行任何对象特定的清理操作
+    // delete
     // 运算符在释放内存之前会自动调用对象的析构函数，以确保对象所占用的资源被正确释放
     ::operator delete(buffer);
 }

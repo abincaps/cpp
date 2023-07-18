@@ -15,7 +15,8 @@ public:
     static T* allocate(size_t n) {
         // 分配 n个T对象的大小
         // 如果要分配的大小等于0 直接优化掉
-        // 调用Alloc的分配器。 这里指默认调用第一级配置器还是第二级配置器， 由Alloc指定
+        // 调用Alloc的分配器。 这里指默认调用第一级配置器还是第二级配置器，
+        // 由Alloc指定
         return 0 == n ? 0 : (T*)Alloc::allocate(n * sizeof(T));
     }
 
@@ -60,9 +61,10 @@ public:
         // realloc()
         // 如果size == 0, 效果等同于free(ptr), 释放内存块
         // 如果ptr是 NULL, 实际效果等同于malloc(size), 分配内存块
-        // 如果size大于原内存块大小, 会找到一块足够大的新内存区域, 内容拷贝后释放旧的内存块。
-        // 如果size小于原内存块大小, 直接缩小内存块大小, 返回原指针。
-        // 如果size和原大小相同, 直接返回原指针, 什么也不做。
+        // 如果size大于原内存块大小, 会找到一块足够大的新内存区域,
+        // 内容拷贝后释放旧的内存块。 如果size小于原内存块大小,
+        // 直接缩小内存块大小, 返回原指针。 如果size和原大小相同,
+        // 直接返回原指针, 什么也不做。
 
         void* res = realloc(p, new_size);
         if (nullptr == res) {
@@ -139,10 +141,10 @@ void* __malloc_alloc_template<inst>::oom_realloc(void* p, size_t n) {
 // 如果大于 128 bytes 交给第一级配置器处理
 
 enum {
-    __ALIGN = 8,        // 设置对齐要求
-    __MAX_BYTES = 128,  // 第二级配置器的一次性申请的最大大小
-    __NFREELISTS = __MAX_BYTES / __ALIGN  // 128 / 8 = 16 个空闲链表(free list), 节点大小分别是8的倍数, 从8字节到128字节
-                                          // number of freelists
+    __ALIGN = 8,                          // 设置对齐要求
+    __MAX_BYTES = 128,                    // 第二级配置器的一次性申请的最大大小
+    __NFREELISTS = __MAX_BYTES / __ALIGN  // 128 / 8 = 16 个空闲链表(free list), 节点大小分别是8的倍数,
+                                          // 从8字节到128字节 number of freelists
 };
 
 template <bool threads, int inst>
@@ -167,18 +169,21 @@ private:
     static obj* volatile free_list[__NFREELISTS];
 
     // 根据内存块大小找到对应free list索引 索引下标从1开始
-    // 通过上调对齐, 可以映射不同大小的内存块到固定数量的空闲链表中, 以实现大小分类和重复利用
+    // 通过上调对齐, 可以映射不同大小的内存块到固定数量的空闲链表中,
+    // 以实现大小分类和重复利用
     static size_t freelist_index(size_t bytes) { return ((bytes + __ALIGN - 1) / __ALIGN - 1); };
 
     // 分配长度为n字节的内存块
     static void* refill(size_t n);
 
-    // 从内存池中分配一块大内存块 提供给refill切分成nobjs个大小为size的小块插入free list中串连成链表
+    // 从内存池中分配一块大内存块
+    // 提供给refill切分成nobjs个大小为size的小块插入free list中串连成链表
     static char* chunk_alloc(size_t size, int& nobjs);
 
     static char* start_free;  // 内存池起始位置
     static char* end_free;    // 内存池结束位置
-    static size_t heap_size;  // 分配在堆上的内存池大小 注意这里不是内存池剩余大小，是一次分配的内存池大小
+    static size_t heap_size;  // 分配在堆上的内存池大小
+                              // 注意这里不是内存池剩余大小，是一次分配的内存池大小
     // 内存池剩余大小由 end_free - start_free 求出
 
 public:
@@ -205,8 +210,8 @@ public:
         }
 
         // 将分配的对象从链表中移除
-        // 修改*cur_free_list也就是free_list所指的空闲链表头部 指向 将要分配的内存块指向的下一个可用的内存块
-        // 头删
+        // 修改*cur_free_list也就是free_list所指的空闲链表头部 指向
+        // 将要分配的内存块指向的下一个可用的内存块 头删
         *cur_free_list = res->free_list_link;
         return res;
     }
@@ -334,7 +339,8 @@ char* __default_alloc_template<threads, inst>::chunk_alloc(size_t size, int& nob
 
     // 处理小于一个区块的剩余空间
     if (left_bytes > 0) {
-        // 分配给对应的free list  8 16 32 ... 128 理论上不会是最大值128  128肯定满足一个区块大小
+        // 分配给对应的free list  8 16 32 ... 128 理论上不会是最大值128
+        // 128肯定满足一个区块大小
         obj* volatile* cur_free_list = free_list + freelist_index(left_bytes);
         // 头插
         ((obj*)start_free)->free_list_link = *cur_free_list;
@@ -347,7 +353,6 @@ char* __default_alloc_template<threads, inst>::chunk_alloc(size_t size, int& nob
 
     //  内存不足的情况
     if (nullptr == start_free) {
-
         // 从要分配的区块大小开始 ， 不可能从小于size的内存块中分配
         for (int i = size; i <= __MAX_BYTES; i += __ALIGN) {
             obj* volatile* cur_free_list = free_list + free_list(i);
@@ -368,7 +373,7 @@ char* __default_alloc_template<threads, inst>::chunk_alloc(size_t size, int& nob
         end_free = nullptr;
 
         // 调用第一级配置器 处理分配内存不足的情况，并抛出异常
-        start_free = (char *)__malloc_alloc_template<0>::allocate(to_get_bytes);
+        start_free = (char*)__malloc_alloc_template<0>::allocate(to_get_bytes);
     }
 
     // 内存池成功扩容后修改内存池大小， 结束位置，
