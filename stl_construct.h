@@ -27,7 +27,7 @@ inline void destroy(ForwardIterator first, ForwardIterator last) {
     __destroy(first, last, value_type(first));
 }
 
-// “trivial destructor”（平凡析构函数）
+// trivial destructor（平凡析构函数）
 // 没有显式定义析构函数；
 // 没有基类（或继承的基类具有平凡析构函数）；
 // 没有任何虚函数
@@ -40,7 +40,7 @@ inline void __destroy(ForwardIterator first, ForwardIterator last, T*) {
 }
 
 // non-trivial destructor
-// 不是平凡析构函数
+// __false_type 不是平凡析构函数
 template <typename ForwardIterator>
 inline void __destroy(ForwardIterator first, ForwardIterator last, __false_type) {
     // 将 [first,last) 范围内的对象析构掉
@@ -54,7 +54,7 @@ inline void __destroy(ForwardIterator first, ForwardIterator last, __false_type)
 }
 
 // trivial destructor
-// 是平凡析构函数
+// __true_type 是平凡析构函数
 // 优化，什么也不做
 template <typename ForwardIterator>
 inline void __destroy(ForwardIterator first, ForwardIterator last, __true_type) {}
