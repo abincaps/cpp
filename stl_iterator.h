@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstddef>
 // 输入迭代器 只能读入
 struct input_iterator_tag {};

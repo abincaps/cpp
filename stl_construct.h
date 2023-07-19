@@ -28,9 +28,9 @@ inline void destroy(ForwardIterator first, ForwardIterator last) {
 }
 
 // trivial destructor（平凡析构函数）
-// 没有显式定义析构函数；
-// 没有基类（或继承的基类具有平凡析构函数）；
-// 没有任何虚函数
+// 没有显式定义析构函数
+// 或者析构函数不接受任何参数
+// 函数体里没有内容
 
 template <typename ForwardIterator, typename T>
 inline void __destroy(ForwardIterator first, ForwardIterator last, T*) {
