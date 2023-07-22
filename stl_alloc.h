@@ -24,10 +24,12 @@ public:
         // 分配一个T对象的大小
         return (T*)Alloc::allocate(sizeof(T));
     }
-
+    // T* p 传入迭代器first n是个数
     static void deallocate(T* p, size_t n) {
         // 如果要释放的大小等于0 直接不做 优化
         if (0 != n) {
+            // n * sizeof(T) 计算要释放空间的大小
+            // 根据Alloc::作用域调用第一级或者第二级配置器
             Alloc::deallocate(p, n * sizeof(T));
         }
     }
@@ -168,9 +170,10 @@ private:
     // 16 个 free lists
     static obj* volatile free_list[__NFREELISTS];
 
-    // 根据内存块大小找到对应free list索引 索引下标从1开始
+    // 根据内存块大小找到对应free list索引 索引下标从0开始
     // 通过上调对齐, 可以映射不同大小的内存块到固定数量的空闲链表中,
     // 以实现大小分类和重复利用
+    // (bytes + __ALIGN - 1) / __ALIGN 向上取整 然后 - 1
     static size_t freelist_index(size_t bytes) { return ((bytes + __ALIGN - 1) / __ALIGN - 1); };
 
     // 分配长度为n字节的内存块
@@ -215,7 +218,7 @@ public:
         *cur_free_list = res->free_list_link;
         return res;
     }
-
+    
     static void deallocate(void* p, size_t n) {
         // 大于128就调用第一级配置器
         if (n > size_t(__MAX_BYTES)) {

@@ -2,8 +2,7 @@
 
 #include <new>  // for placement new
 
-// <stl_construct>：定义了全局函数 construct() 和
-// destroy()，负责对象的构造和析构
+// <stl_construct>：定义了全域函数 construct() 和 estroy()，负责对象的构造和析构
 
 template <typename T1, typename T2>
 inline void construct(T1* pointer, const T2& arguments) {
@@ -34,7 +33,7 @@ inline void destroy(ForwardIterator first, ForwardIterator last) {
 
 template <typename ForwardIterator, typename T>
 inline void __destroy(ForwardIterator first, ForwardIterator last, T*) {
-    // TODO: 等添加了__type_traits
+    // 判断T类型是否是平凡析构函数
     using trivial_destructor = typename __type_traits<T>::has_trivial_destructor;
     __destroy_aux(first, last, trivial_destructor());
 }
@@ -43,7 +42,7 @@ inline void __destroy(ForwardIterator first, ForwardIterator last, T*) {
 // __false_type 不是平凡析构函数
 template <typename ForwardIterator>
 inline void __destroy(ForwardIterator first, ForwardIterator last, __false_type) {
-    // 将 [first,last) 范围内的对象析构掉
+    // 将 [first,last) 范围内的对象一个一个析构掉
     for (; first < last; first++) {
         // *first对迭代器first进行解引用, 得到它当前指向的对象
         // &取这个对象的地址
@@ -54,7 +53,8 @@ inline void __destroy(ForwardIterator first, ForwardIterator last, __false_type)
 }
 
 // trivial destructor
-// __true_type 是平凡析构函数
+// __true_type 是平凡析构函数 也就是基本类型
+// 基本类型只需要把内存归还给free list 或者 free掉
 // 优化，什么也不做
 template <typename ForwardIterator>
 inline void __destroy(ForwardIterator first, ForwardIterator last, __true_type) {}
