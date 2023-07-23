@@ -1,6 +1,9 @@
 #pragma once
 
 #include <new>  // for placement new
+#include "type_traits.h"
+#include "stl_iterator.h"
+
 
 // <stl_construct>：定义了全域函数 construct() 和 estroy()，负责对象的构造和析构
 
@@ -19,29 +22,20 @@ inline void destroy(T* pointer) {
     pointer->~T();
 }
 
-// ForwardIterator 单向序列中进行顺序遍历的迭代器
-// 接受两个迭代器, 调用 value_type() 获得迭代器所指对象的类别
-template <typename ForwardIterator>
-inline void destroy(ForwardIterator first, ForwardIterator last) {
-    __destroy(first, last, value_type(first));
-}
+
+
 
 // trivial destructor（平凡析构函数）
 // 没有显式定义析构函数
 // 或者析构函数不接受任何参数
 // 函数体里没有内容
 
-template <typename ForwardIterator, typename T>
-inline void __destroy(ForwardIterator first, ForwardIterator last, T*) {
-    // 判断T类型是否是平凡析构函数
-    using trivial_destructor = typename __type_traits<T>::has_trivial_destructor;
-    __destroy_aux(first, last, trivial_destructor());
-}
+
 
 // non-trivial destructor
 // __false_type 不是平凡析构函数
 template <typename ForwardIterator>
-inline void __destroy(ForwardIterator first, ForwardIterator last, __false_type) {
+inline void __destroy_aux(ForwardIterator first, ForwardIterator last, __false_type) {
     // 将 [first,last) 范围内的对象一个一个析构掉
     for (; first < last; first++) {
         // *first对迭代器first进行解引用, 得到它当前指向的对象
@@ -57,8 +51,23 @@ inline void __destroy(ForwardIterator first, ForwardIterator last, __false_type)
 // 基本类型只需要把内存归还给free list 或者 free掉
 // 优化，什么也不做
 template <typename ForwardIterator>
-inline void __destroy(ForwardIterator first, ForwardIterator last, __true_type) {}
+inline void __destroy_aux(ForwardIterator first, ForwardIterator last, __true_type) {}
 
 // 泛型特化
 // inline void destroy(char*, char*) {}
 // inline void destroy(wchar_t*, wchar_t*) {}
+
+template <typename ForwardIterator, typename T>
+inline void __destroy(ForwardIterator first, ForwardIterator last, T*) {
+    // 判断T类型是否是平凡析构函数
+    using trivial_destructor = typename __type_traits<T>::has_trivial_destructor;
+    __destroy_aux(first, last, trivial_destructor());
+}
+
+
+// ForwardIterator 单向序列中进行顺序遍历的迭代器
+// 接受两个迭代器, 调用 value_type() 获得迭代器所指对象的类别
+template <typename ForwardIterator>
+inline void destroy(ForwardIterator first, ForwardIterator last) {
+    __destroy(first, last, value_type(first));
+}

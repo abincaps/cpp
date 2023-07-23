@@ -1,21 +1,29 @@
+#pragma once
+#include <cstddef>
+#include <iostream>
+
+#include "stl_alloc.h"
+
 // class Alloc = alloc 默认参数 自定义的分配器类型
-template <typename T, typename Alloc = alloc>
+template <typename T, typename Alloc = __default_alloc_template<false, 0>>
 class vector {
 public:
     // vector<T> 类型
     using value_type = T;
     using pointer = value_type*;
-    
-    using iterator = value_type*; // 定义迭代器
+
+    using iterator = value_type*;  // 定义迭代器
     using reference = value_type&;
+
     using size_type = size_t;
     using difference_type = ptrdiff_t;
 
 protected:
-    using data_allocator = simple_alloc<value_type, Alloc>;  // 空间配置器接口，传入元素类型value_type 和选择的配置器Alloc
-    iterator start;                                          // 表示目前使用空间的头
-    iterator finish;                                         // 表示目前使用空间的尾 
-    iterator end_of_storage;                                 // 表示目前备用空间的尾 （也就是实际空间的尾）
+    using data_allocator =
+        simple_alloc<value_type, Alloc>;  // 空间配置器接口，传入元素类型value_type 和选择的配置器Alloc
+    iterator start;                       // 表示目前使用空间的头
+    iterator finish;                      // 表示目前使用空间的尾
+    iterator end_of_storage;              // 表示目前备用空间的尾 （也就是实际空间的尾）
 
     void insert_aux(iterator position, const T& x);
 
@@ -35,8 +43,8 @@ protected:
 
 public:
     // 迭代器首尾  [first, end) 半闭半开
-    iterator begin() { return start; }
-    iterator end() { return finish; }
+    iterator begin() const { return start; }
+    iterator end() const { return finish; }
 
     // 返回容器中元素个数 end() - begin() 指针相减返回的是个数 O(1)
     size_type size() const { return size_type(end() - begin()); }
@@ -127,7 +135,7 @@ protected:
         // 返回的是配置空间的起始位置
         return res;
     }
-}
+};
 
 // 在position位置上插入一个x
 template <typename T, typename Alloc>
@@ -192,29 +200,23 @@ void vector<T, Alloc>::insert_aux(iterator position, const T& x) {
 // 在position的位置插入n个x
 template <class T, class Alloc>
 void vector<T, Alloc>::insert(iterator position, size_type n, const T& x) {
-    
     if (0 != n) {
         // 备用空间大于新增的个数 TODO
         if (size_type(end_of_storage - finish) >= n) {
-
             T x_copy = x;
 
-            
-            const size_type elems_after = finish - position; // 插入位置到结尾的距离
+            const size_type elems_after = finish - position;  // 插入位置到结尾的距离
 
-            
             iterator old_finish = finish;
 
             // 大于要插入的个数 n
             if (elems_after > n) {
-  
                 // uninitialized_copy(finish - n, finish, finish);
                 // finish += n;
                 // copy_backward(position, old_finish - n, old_finish);
                 // fill(position, position + n, x_copy);
 
             } else {
-
                 // 先填充finish
                 uninitialized_fill_n(finish, n - elems_after, x_copy);
                 finish += n - elems_after;
@@ -224,7 +226,6 @@ void vector<T, Alloc>::insert(iterator position, size_type n, const T& x) {
             }
 
         } else {
-
             // 重新申请的空间 = max（当前两倍的空间，当前的空间 + 插入所需的空间）
             // 也就等于 当前的空间 + max(当前的空间， 插入所需的空间)
 
@@ -242,9 +243,7 @@ void vector<T, Alloc>::insert(iterator position, size_type n, const T& x) {
                 new_finish = uninitialized_fill_n(new_finish, n, x);
                 // 将[positon, finish) 移动到n个被插入元素的后面
                 new_finish = uninitialized_copy(position, finish, new_finish);
-            }
-            catch (...) {
-
+            } catch (...) {
                 destroy(new_start, new_finish);
                 data_allocator::deallocate(new_start, len);
                 throw;

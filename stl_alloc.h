@@ -1,5 +1,5 @@
 #pragma once
-
+#include <algorithm>
 #include <cstddef>
 #include <cstdlib>
 #include <new>
@@ -218,7 +218,7 @@ public:
         *cur_free_list = res->free_list_link;
         return res;
     }
-    
+
     static void deallocate(void* p, size_t n) {
         // 大于128就调用第一级配置器
         if (n > size_t(__MAX_BYTES)) {
@@ -358,8 +358,9 @@ char* __default_alloc_template<threads, inst>::chunk_alloc(size_t size, int& nob
     if (nullptr == start_free) {
         // 从要分配的区块大小开始 ， 不可能从小于size的内存块中分配
         for (int i = size; i <= __MAX_BYTES; i += __ALIGN) {
-            obj* volatile* cur_free_list = free_list + free_list(i);
-            obj* volatile* p = *cur_free_list;
+            obj* volatile* cur_free_list = free_list + freelist_index(i);
+
+            obj* p = *cur_free_list;
 
             // p不等于nullptr 说明当前对应的free list中有可用的内存块
             if (p) {
